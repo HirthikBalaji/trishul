@@ -193,6 +193,58 @@ def download_report_pdf(run_id: str, lang: str = "en"):
     return FileResponse(p, media_type="application/pdf", filename=f"trishul_report_{lang}.pdf")
 
 
+@app.get("/api/run/{run_id}/restore")
+def get_restore_ranking(run_id: str):
+    """Serve restore ranking CSV."""
+    run_dir = resolve_run_dir(run_id)
+    p = run_dir / "restore_ranking.csv"
+    if not p.exists():
+        raise HTTPException(status_code=404, detail="Restore ranking not found")
+    return FileResponse(p, media_type="text/csv", filename="restore_ranking.csv")
+
+
+@app.get("/api/run/{run_id}/flowpath")
+def get_flowpath(run_id: str):
+    """Serve flood-path GeoJSON."""
+    run_dir = resolve_run_dir(run_id)
+    p = run_dir / "flowpath.geojson"
+    if not p.exists():
+        raise HTTPException(status_code=404, detail="Flowpath GeoJSON not found")
+    with open(p, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+@app.post("/api/run/{run_id}/chat")
+def chat_copilot(run_id: str, payload: dict[str, Any]):
+    """Grounded Situation Report Copilot answering rescuers' tactical queries."""
+    from trishul.report.copilot import GroundedReportCopilot
+    from trishul.report.ledger import ClaimLedger
+
+    run_dir = resolve_run_dir(run_id)
+    p_facts = run_dir / "facts.json"
+    if not p_facts.exists():
+        raise HTTPException(status_code=404, detail="Facts ledger not found")
+
+    ledger = ClaimLedger(run_id=run_id)
+    with open(p_facts, "r", encoding="utf-8") as f:
+        facts_list = json.load(f)
+    for fact in facts_list:
+        ledger.register(
+            fact["id"],
+            fact["value"],
+            fact.get("unit", ""),
+            fact.get("ci_lo"),
+            fact.get("ci_hi"),
+            fact.get("layer", "general"),
+            fact.get("method", "direct"),
+        )
+
+    copilot = GroundedReportCopilot(ledger)
+    query = payload.get("query", "")
+    lang = payload.get("lang", "en")
+    return copilot.answer_query(query, lang=lang)
+
+
 # Serve Web Dashboard at root / and /dashboard
 @app.get("/", response_class=HTMLResponse)
 @app.get("/dashboard", response_class=HTMLResponse)

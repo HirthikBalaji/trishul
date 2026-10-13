@@ -424,6 +424,27 @@
         <div style="font-size: 0.8rem; line-height: 1.4;">
           <strong>Top Recommendation:</strong>
           <p style="margin-top: 4px; color: var(--glacier-ink);">Repair Bhote Koshi Bridge (Syapru Besi) to restore vital road access for downstream healthcare transport.</p>
+          <a href="/api/run/latest/restore" class="btn btn-secondary" style="margin-top: 8px; font-size: 0.75rem; width: 100%; justify-content: center;" download>📥 Download restore_ranking.csv</a>
+        </div>
+      </div>
+
+      <!-- Responders Q&A Copilot (Grounded Claim Ledger) -->
+      <div class="card">
+        <div class="card-title">🤖 Grounded Q&A Copilot</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px;">
+          Ask tactical rescue questions (100% numbers verified from Claim Ledger):
+        </div>
+        <div style="display: flex; gap: 4px; margin-bottom: 6px;">
+          <input type="text" id="copilot-input" placeholder="e.g. Which bridges are down?" style="font-size: 0.78rem; padding: 5px 8px;" onkeydown="if(event.key==='Enter') sendCopilotQuery()" />
+          <button class="btn" style="padding: 5px 10px; font-size: 0.75rem;" onclick="sendCopilotQuery()">Ask</button>
+        </div>
+        <div id="copilot-chips" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px;">
+          <button style="font-size: 0.68rem; padding: 2px 6px; border: 1px solid var(--border-color); border-radius: 10px; background: #FFF; cursor: pointer;" onclick="setCopilotQuery('Which bridges are down?')">Bridges down?</button>
+          <button style="font-size: 0.68rem; padding: 2px 6px; border: 1px solid var(--border-color); border-radius: 10px; background: #FFF; cursor: pointer;" onclick="setCopilotQuery('Who is cut off?')">Who is cut off?</button>
+          <button style="font-size: 0.68rem; padding: 2px 6px; border: 1px solid var(--border-color); border-radius: 10px; background: #FFF; cursor: pointer;" onclick="setCopilotQuery('कुन कुन सडक अवरुद्ध छन्?')">सडक अवरुद्ध?</button>
+        </div>
+        <div id="copilot-response" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 4px; padding: 8px; font-size: 0.78rem; min-height: 48px; color: var(--glacier-ink);">
+          <em>Responses appear here...</em>
         </div>
       </div>
     </aside>
@@ -571,6 +592,33 @@
       if (map.getLayer('roads-layer')) {
         map.setLayoutProperty('roads-layer', 'visibility', showRoads ? 'visible' : 'none');
       }
+    }
+
+    function setCopilotQuery(q) {
+      document.getElementById('copilot-input').value = q;
+      sendCopilotQuery();
+    }
+
+    function sendCopilotQuery() {
+      const input = document.getElementById('copilot-input');
+      const query = input.value.trim();
+      if (!query) return;
+
+      const respBox = document.getElementById('copilot-response');
+      respBox.innerHTML = '<em>Consulting Claim Ledger...</em>';
+
+      fetch('/api/run/latest/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: query, lang: currentLang })
+      })
+      .then(r => r.json())
+      .then(data => {
+        respBox.innerHTML = `<strong>Answer:</strong> ${data.answer}`;
+      })
+      .catch(err => {
+        respBox.innerHTML = '<span style="color: red;">Error retrieving answer from ledger.</span>';
+      });
     }
   </script>
 </body>

@@ -26,20 +26,26 @@ class LedgerVerifier:
     def verify_template_compliance(self, text: str) -> tuple[bool, list[str]]:
         """Verify that template text before placeholder substitution contains no literal numerals."""
         violations = []
-        # Find raw ASCII digits
-        for match in re.finditer(r"\b\d+\b", text):
-            token = match.group(0)
-            if token not in self.whitelist:
-                violations.append(f"Forbidden raw digit token '{token}' found in template at index {match.start()}")
 
-        # Find Devanagari digits
-        for match in re.finditer(r"[०-९]+", text):
-            token = match.group(0)
-            if token not in self.whitelist:
-                violations.append(f"Forbidden Devanagari numeral '{token}' found in template at index {match.start()}")
+        # 1. Strip valid [[F:...]] placeholders so identifier numbers like km2 or run_01 don't trigger
+        clean_text = re.sub(r"\[\[F:[^\]]+\]\]", " PLACEHOLDER ", text)
 
-        # Find suspicious spelled-out number words
-        lower_text = text.lower()
+        # 2. Strip whitelisted dates or strings (e.g. 2026-08-26, 2026)
+        for wl in sorted(self.whitelist, key=len, reverse=True):
+            clean_text = clean_text.replace(wl, " WHITELIST ")
+
+        # 3. Find remaining raw ASCII digits
+        for match in re.finditer(r"\b\d+\b", clean_text):
+            token = match.group(0)
+            violations.append(f"Forbidden raw digit token '{token}' found in template at index {match.start()}")
+
+        # 4. Find Devanagari digits
+        for match in re.finditer(r"[०-९]+", clean_text):
+            token = match.group(0)
+            violations.append(f"Forbidden Devanagari numeral '{token}' found in template at index {match.start()}")
+
+        # 5. Find suspicious spelled-out number words
+        lower_text = clean_text.lower()
         for word in ADVERSARIAL_WORDS:
             pattern = rf"\b{re.escape(word)}\b"
             if re.search(pattern, lower_text):
