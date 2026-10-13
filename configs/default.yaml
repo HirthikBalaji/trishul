@@ -1,0 +1,113 @@
+# TRISHUL Pipeline Configuration
+# All parameters documented with physical units and rationale
+
+version: "1.0.0"
+
+general:
+  target_crs_epsg: null  # Auto-detected from AOI UTM zone if null
+  cache_dir: "./cache"
+  runs_dir: "./runs"
+  log_level: "INFO"
+  seed: 42
+
+ingest:
+  s1:
+    polarizations: ["VV", "VH"]
+    product_type: "GRD"
+    sensor_mode: "IW"
+    min_aoi_coverage_pct: 80.0
+    pre_stack_max_scenes: 12
+    pre_stack_min_scenes: 3
+    pre_stack_window_days: 90
+    post_max_latency_days: 10
+  s2:
+    max_cloud_cover_pct: 40.0
+    pre_window_days: 30
+    post_window_days: 12
+    cloud_dilation_pixels: 5
+  dem:
+    dataset: "Copernicus-GLO-30"
+    resolution_m: 30
+  osm:
+    # ohsome snapshot date strictly < event_date
+    fallback_snapshot_date: "2026-07-27"
+    building_filter: "building=* and geometry:polygon"
+    road_filter: "highway=* and geometry:line"
+    bridge_filter: "(bridge=* or man_made=bridge)"
+    hospital_filter: "amenity=hospital or healthcare=hospital"
+    clinic_filter: "amenity=clinic or healthcare=clinic"
+    place_filter: "place in (city,town,village,hamlet)"
+
+sar_geometry:
+  # Local incidence angle comfort window (degrees)
+  min_valid_incidence_deg: 20.0
+  max_valid_incidence_deg: 50.0
+  # Shadow / layover decay steepness
+  geometry_smoothness_factor: 5.0
+  # Down-weighting threshold near noise floor (dB)
+  snr_noise_floor_vh_db: -28.0
+  snr_noise_floor_vv_db: -24.0
+
+sar_change:
+  equivalent_number_of_looks: 4.0
+  mad_sigma_floor_db: 0.5
+  multilook_window: 3
+  significance_level_alpha: 0.05
+
+optical:
+  indices: ["NDVI", "MNDWI", "NDWI", "BSI", "NBR", "NDSI"]
+  # Data-driven per scene thresholds inside hydraulically plausible corridor
+  ndvi_vegetation_loss_threshold: -0.15
+  bsi_sediment_gain_threshold: 0.10
+  mndwi_water_threshold: 0.05
+  ndsi_snow_threshold: 0.42
+
+terrain:
+  d8_stream_threshold_cells: 500
+  hand_buffer_max_m: 80.0
+  stage_profile_spacing_m: 150.0
+  stage_upper_percentile: 0.90
+  max_stage_iterations: 3
+  runaway_growth_guard_ratio: 1.5
+
+model:
+  checkpoint_path: "models/geosar_unet_v1.onnx"
+  architecture: "UNet-ResNet50"
+  patch_size: 224
+  stride: 112
+  input_channels: 10  # [pre2_vv, pre2_vh, pre1_vv, pre1_vh, post_vv, post_vh, diff_vv, diff_vh, dem, slope]
+  num_classes: 3      # 0: no water, 1: permanent water, 2: flood water
+
+event_adapt:
+  enabled: true
+  min_clear_sky_pixels: 500
+  spatial_block_cv_size_m: 1000.0
+
+exposure:
+  building_buffer_m: 15.0
+  road_buffer_half_width_m: 5.0
+  bridge_approach_buffer_m: 60.0
+  bridge_weights:
+    hydraulic_stage_exceedance: 0.45
+    approach_road_damage: 0.40
+    signature_loss: 0.15
+
+network:
+  settlement_dbscan_eps_m: 150.0
+  settlement_min_samples: 3
+  road_snap_radius_m: 120.0
+  drivable_highways:
+    - "motorway"
+    - "trunk"
+    - "primary"
+    - "secondary"
+    - "tertiary"
+    - "unclassified"
+    - "residential"
+  pedestrian_highways:
+    - "track"
+    - "path"
+    - "footway"
+    - "bridleway"
+  monte_carlo_runs: 200
+  spatial_correlation_length_m: 150.0

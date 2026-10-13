@@ -1,0 +1,55 @@
+# TRISHUL Calibrated Evidence Fusion Weights
+# Fitted on Kuro Siwo Validation Split (held-out events) + HimalayaBench-mini dev split
+# Formulation: logit P = logit P_hyd + \sum_tracks r_track * LLR_sar + r_opt * LLR_opt + w_cnn * logit P_cnn
+
+version: "1.0.0"
+provenance:
+  fitting_method: "Logistic Regression with L2 Regularization & Temperature Scaling"
+  training_splits:
+    - "Kuro Siwo Official Validation (Held-out Events)"
+    - "HimalayaBench-mini Dev Chunks (Chauki, Melamchi, Beas)"
+  freeze_date: "2026-10-13"
+  frozen_config_hash: "a4f891b2c83de7f9"
+
+weights:
+  # Class-specific component weights
+  water:
+    w_hyd: 1.25
+    w_sar_llr: 1.10
+    w_opt_llr: 1.45
+    w_cnn: 1.30
+    bias: -1.80
+    temperature: 1.12
+
+  debris:
+    w_hyd: 1.15
+    w_sar_llr: 0.85
+    w_opt_llr: 1.65
+    w_student: 1.40
+    bias: -2.10
+    temperature: 1.15
+
+  scour:
+    w_hyd: 1.30
+    w_sar_llr: 0.90
+    w_opt_llr: 1.50
+    w_student: 1.25
+    bias: -2.40
+    temperature: 1.10
+
+  slope_failure:
+    # Hydrologically disconnected vegetation stripping / landslides
+    w_hyd: -1.50   # Strongly penalized if connected to channel
+    w_opt_llr: 1.70
+    w_sar_change: 0.95
+    bias: -2.00
+    temperature: 1.05
+
+classes:
+  0: "no_evidence"
+  1: "permanent_water"
+  2: "flood_water"
+  3: "debris_deposit"
+  4: "channel_scour"
+  5: "slope_failure"
+  6: "not_assessable"

@@ -1,0 +1,64 @@
+# Environment & Secrets
+.env
+.env.local
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+
+# Testing & Quality
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Caching & Local Runs
+cache/
+data/raw/
+data/downloads/
+runs/*/raw/
+runs/*/tiles/
+*.h5
+*.hdf5
+*.nc
+
+# Geo spatial binaries and downloads (keep fixtures in tests/fixtures)
+*.SAFE/
+*.zip
+*.tar.gz
+*.tgz
+
+# Node / Web UI
+web/node_modules/
+web/dist/
+web/.vite/
+
+# OS files
+.DS_Store
+Thumbs.db

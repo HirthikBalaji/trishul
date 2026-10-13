@@ -1,0 +1,80 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "trishul"
+version = "0.1.0"
+description = "TRISHUL: Physics-Gated Multimodal Flood Damage Mapping & Isolation Analysis for Himalayan Valleys"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "TRISHUL AI Team" }
+]
+dependencies = [
+    "numpy>=1.26.0",
+    "scipy>=1.11.0",
+    "scikit-learn>=1.4.0",
+    "scikit-image>=0.22.0",
+    "rasterio>=1.3.9",
+    "shapely>=2.0.0",
+    "geopandas>=0.14.0",
+    "pyproj>=3.6.0",
+    "networkx>=3.2.0",
+    "pydantic>=2.6.0",
+    "pydantic-settings>=2.2.0",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+    "httpx>=0.27.0",
+    "pyyaml>=6.0.1",
+    "jinja2>=3.1.3",
+    "matplotlib>=3.8.0",
+    "pillow>=10.2.0",
+    "onnxruntime>=1.17.0",
+    "rich>=13.7.0",
+    "python-dotenv>=1.0.1",
+]
+
+[project.optional-dependencies]
+ai = [
+    "torch>=2.2.0",
+    "segmentation-models-pytorch>=0.3.3",
+    "lightgbm>=4.3.0",
+]
+report = [
+    "weasyprint>=61.0",
+    "reportlab>=4.1.0",
+]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.3.0",
+    "mypy>=1.9.0",
+]
+
+[project.scripts]
+trishul = "trishul.pipeline:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["trishul"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B"]
+ignore = ["E501", "B008"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+warn_unused_ignores = false
+disallow_untyped_defs = false
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"
