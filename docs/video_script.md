@@ -117,7 +117,7 @@
   - *"© OpenStreetMap contributors."*  
   - *"European Union, Copernicus Emergency Management Service data"*  
   - *"Educational prototype, not an operational tool. No imagery of victims."*  
-  - GitHub Repo: `github.com/trishul-team/trishul`  
+  - GitHub Repo: `https://github.com/HirthikBalaji/trishul`  
 
 **Voiceover (Speaker):**  
 > *"Finally, every metric in our one-page bilingual situation reports and Rescuer Copilot is mathematically verified against the Claim Ledger—zero invented numbers. TRISHUL delivers transparent, physics-gated satellite intelligence when Himalayan communities need it most. Thank you."*

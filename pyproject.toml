@@ -56,6 +56,11 @@ dev = [
 [project.scripts]
 trishul = "trishul.pipeline:main"
 
+[project.urls]
+Homepage = "https://github.com/HirthikBalaji/trishul"
+Repository = "https://github.com/HirthikBalaji/trishul"
+Documentation = "https://github.com/HirthikBalaji/trishul#readme"
+
 [tool.hatch.build.targets.wheel]
 packages = ["trishul"]
 

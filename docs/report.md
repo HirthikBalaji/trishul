@@ -2,7 +2,8 @@
 ## Physics-Gated Multimodal Flood Damage Mapping & Isolation Analysis for Steep Mountain Valleys
 **Multimodal AI Hackathon 2026 · Track B: Mapping Flood Damage from Space**
 
-*An end-to-end, reproducible operational prototype evaluating post-disaster hazard extent, infrastructure exposure, and community isolation from raw Earth Observation data.*
+*An end-to-end, reproducible operational prototype evaluating post-disaster hazard extent, infrastructure exposure, and community isolation from raw Earth Observation data.*  
+**Repository:** [https://github.com/HirthikBalaji/trishul](https://github.com/HirthikBalaji/trishul)
 
 ---
 

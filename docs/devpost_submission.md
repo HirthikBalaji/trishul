@@ -3,8 +3,9 @@
 
 ---
 
-## 1. Project Tagline
-**Physics-Gated Multimodal Flood Damage Mapping & Isolation Analysis for Steep Mountain Valleys**
+## 1. Project Links & Tagline
+- **Public GitHub Repository:** [https://github.com/HirthikBalaji/trishul](https://github.com/HirthikBalaji/trishul)
+- **Tagline:** **Physics-Gated Multimodal Flood Damage Mapping & Isolation Analysis for Steep Mountain Valleys**
 
 ---
 

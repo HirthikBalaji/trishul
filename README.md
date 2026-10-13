@@ -2,7 +2,7 @@
 ### Physics-Gated Multimodal Flood Damage Mapping & Isolation Analysis for Himalayan Valleys
 **Multimodal AI Hackathon 2026 · Track B: Mapping Flood Damage from Space**
 
-[![CI](https://github.com/trishul-team/trishul/actions/workflows/ci.yml/badge.svg)](https://github.com/trishul-team/trishul/actions)
+[![CI](https://github.com/HirthikBalaji/trishul/actions/workflows/ci.yml/badge.svg)](https://github.com/HirthikBalaji/trishul/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Data: ODbL](https://img.shields.io/badge/Data-ODbL-blue.svg)](LICENSE-DATA.md)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](pyproject.toml)
@@ -93,7 +93,7 @@ Conventional flood mapping thresholds a single SAR log-ratio and overlays it wit
 ### Local Setup
 ```bash
 # 1. Clone repository
-git clone https://github.com/trishul-team/trishul.git
+git clone https://github.com/HirthikBalaji/trishul.git
 cd trishul
 
 # 2. Install dependencies (creates .venv with all requirements)
