@@ -357,3 +357,11 @@ def serve_dashboard():
     if not index_file.exists():
         raise HTTPException(status_code=404, detail="Dashboard index.html not found")
     return HTMLResponse(content=index_file.read_text(encoding="utf-8"))
+
+@app.get("/console.html", response_class=HTMLResponse)
+@app.get("/console", response_class=HTMLResponse)
+def serve_console():
+    console_file = WEB_DIR / "console.html"
+    if not console_file.exists():
+        raise HTTPException(status_code=404, detail="Console console.html not found")
+    return HTMLResponse(content=console_file.read_text(encoding="utf-8"))
