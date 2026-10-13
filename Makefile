@@ -49,5 +49,12 @@ web:
 docs:
 	@echo "Documentation generated in docs/ and README.md"
 
+docker-build:
+	docker build -t trishul:latest .
+
+docker-up:
+	docker compose up -d
+
 clean:
 	rm -rf .pytest_cache .mypy_cache .ruff_cache htmlcov .coverage
+

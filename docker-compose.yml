@@ -1,0 +1,12 @@
+services:
+  trishul:
+    build: .
+    container_name: trishul-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./runs:/app/runs
+      - ./reports:/app/reports
+    restart: unless-stopped

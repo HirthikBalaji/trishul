@@ -63,3 +63,48 @@ This document records all architectural, technical, and algorithmic decisions ma
   2. Rule-compliant cross-teaching (EVENT-ADAPT): where Sentinel-2 has clear skies, derive pseudo-labels for scour/debris via $\Delta\text{NDVI} \ll 0$ and $\Delta\text{BSI} \gg 0$ hydrologically connected to the channel; train a SAR+terrain student model (LightGBM/small CNN) and evaluate on spatial blocks $\ge 1\text{ km}$, then infer over cloud-covered SAR pixels.
 - **Choice:** Option 2: EVENT-ADAPT cross-teaching.
 - **Why:** Purely uses allowed raw data, produces debris classification without violating data rules, and directly tackles the Himalayan physics challenge.
+
+---
+
+### DEC-006: Sub-Pixel Bridge Evaluation via Noisy-OR Model
+- **Date:** 2026-10-13
+- **Context:** 10 m satellite pixels cannot resolve bridge decks (width 3–8 m). Simple pixel raster intersection yields severe false negatives or false positives.
+- **Options Considered:**
+  1. Buffer bridge point/line by 10 m and take max flood probability.
+  2. Multi-mechanism physical noisy-OR model: combine hydraulic thalweg overtopping probability ($P_{\text{overtop}}$), riverbank approach washout ($P_{\text{approach}}$), and radar backscatter change ($P_{\text{radar}}$).
+- **Choice:** Option 2: Noisy-OR formulation.
+- **Why:** Directly addresses Himalayan failure mode #3; reflects physical reality where bridges fail predominantly from approach abutment washouts or water overtopping, even when the deck structure itself remains intact.
+
+---
+
+### DEC-007: Spatially Correlated Monte-Carlo Percolation for Community Isolation
+- **Date:** 2026-10-13
+- **Context:** Road network outages in landslides are spatially clustered. Deterministic single-threshold edge removal discards uncertainty and misinforms rescue logistics.
+- **Options Considered:**
+  1. Deterministic graph cut: remove edges where $p_{\text{hit}} > 0.5$.
+  2. Spatially correlated Monte-Carlo percolation ($K=200$ Gaussian random field draws, $\ell = 500\text{ m}$).
+- **Choice:** Option 2: Correlated Monte-Carlo percolation with empirical 90% confidence intervals.
+- **Why:** Delivers robust probability of isolation $P(\text{cut-off}) \in [0, 1]$ and enables greedy priority queue ordering for road restoration (`restore_ranking.csv`).
+
+---
+
+### DEC-008: Adversarial Claim Ledger Verification Engine
+- **Date:** 2026-10-13
+- **Context:** Competition rule §0 Rule 4 and §6.10 strictly prohibit fabricating or hallucinating numbers.
+- **Options Considered:**
+  1. Manual review of README and generated PDFs.
+  2. Automated programmatic `LedgerVerifier` that scans text templates, masks whitelisted dates and unit tokens, and fails CI if any ungrounded numeric digit or spelled-out number appears.
+- **Choice:** Option 2: Automated adversarial `LedgerVerifier`.
+- **Why:** Enforces zero-hallucination compliance across all English and Nepali situation reports and Rescuer Copilot responses.
+
+---
+
+### DEC-009: Submission Packaging & Containerized Reproducibility
+- **Date:** 2026-10-13
+- **Context:** Competition rules require seamless reproducibility from a fresh clone.
+- **Options Considered:**
+  1. Local `Makefile` and `uv` setup only.
+  2. Multi-target `Makefile` + containerized `Dockerfile` and `docker-compose.yml`.
+- **Choice:** Option 2: Provide both local `make` workflows and a single-command Docker deployment.
+- **Why:** Guarantees judges can run TRISHUL regardless of their local GDAL or OS environment.
+
