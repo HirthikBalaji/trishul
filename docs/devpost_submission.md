@@ -5,6 +5,8 @@
 
 ## 1. Project Links & Tagline
 - **Public GitHub Repository:** [https://github.com/HirthikBalaji/trishul](https://github.com/HirthikBalaji/trishul)
+- **Live 24/7 Cloud Deployment (Hugging Face Space):** [https://huggingface.co/spaces/HirthikBalaji/trishul](https://huggingface.co/spaces/HirthikBalaji/trishul)
+- **Direct Interactive GIS Console:** [https://hirthikbalaji-trishul.static.hf.space/console.html](https://hirthikbalaji-trishul.static.hf.space/console.html)
 - **Tagline:** **Physics-Gated Multimodal Flood Damage Mapping & Isolation Analysis for Steep Mountain Valleys**
 
 ---

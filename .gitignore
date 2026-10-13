@@ -63,3 +63,8 @@ web/.vite/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Hugging Face deployment workspace & agent configs
+hf_space/
+.agents/
+.claude/

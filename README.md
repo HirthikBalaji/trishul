@@ -3,6 +3,7 @@
 **Multimodal AI Hackathon 2026 · Track B: Mapping Flood Damage from Space**
 
 [![CI](https://github.com/HirthikBalaji/trishul/actions/workflows/ci.yml/badge.svg)](https://github.com/HirthikBalaji/trishul/actions)
+[![Hugging Face Space](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Space%20Demo-yellow)](https://huggingface.co/spaces/HirthikBalaji/trishul)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Data: ODbL](https://img.shields.io/badge/Data-ODbL-blue.svg)](LICENSE-DATA.md)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](pyproject.toml)
@@ -32,6 +33,7 @@ Conventional flood mapping thresholds a single SAR log-ratio and overlays it wit
 
 | Deliverable | Location | Description |
 |---|---|---|
+| **Live 24/7 Web App & GIS Console** | [Hugging Face Space](https://huggingface.co/spaces/HirthikBalaji/trishul) · [Direct App](https://hirthikbalaji-trishul.static.hf.space) | Permanent 24/7 cloud deployment & live GIS console |
 | **System Report (≤ 6 pages)** | [docs/report.md](docs/report.md) | Official comprehensive competition report |
 | **Technical Architecture** | [docs/architecture.md](docs/architecture.md) | Mathematical formulation & system specifications |
 | **Operational Limitations** | [docs/limitations.md](docs/limitations.md) | Honest boundaries, satellite latency & terrain bounds |
