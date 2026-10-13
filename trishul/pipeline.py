@@ -21,6 +21,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 from shapely.geometry import shape
 
 from trishul.compliance.manifest import ProductRecord, RunManifest
@@ -33,10 +34,13 @@ from trishul.ingest.dem import DemManager
 from trishul.ingest.ohsome import OhsomeClient
 from trishul.network.connectivity import NetworkConnectivityAnalyzer
 from trishul.network.graph import RoadGraphBuilder
+from trishul.optical.composites import OpticalEvidenceAnalyzer
 from trishul.report.ledger import ClaimLedger
 from trishul.report.pdf import SituationReportPdfGenerator
 from trishul.sar.backends import DefaultSarBackend
 from trishul.sar.change import SarChangeDetector
+from trishul.sar.geometry import SarGeometryGate
+from trishul.terrain.hand import HandProcessor
 
 # Set up logging
 logging.basicConfig(
@@ -97,6 +101,11 @@ def run_pipeline(
     dem_mgr = DemManager()
     elevation, transform, crs = dem_mgr.get_dem_for_bounds(bounds)
 
+    # Compute HAND and Hydraulic Prior
+    logger.info("Computing Height Above Nearest Drainage (HAND) and hydraulic prior...")
+    hand_proc = HandProcessor(resolution_m=30.0, nominal_flood_stage_m=18.0)
+    hand_bundle = hand_proc.compute_hand(elevation)
+
     # 2. Ingest Pre-Event OSM Snapshot
     logger.info("[Stage 2/7] Fetching pre-event OSM assets via Ohsome API...")
     ohsome = OhsomeClient()
@@ -109,22 +118,40 @@ def run_pipeline(
     places_geojson = ohsome.fetch_elements(bounds, "place in (city,town,village,hamlet)", osm_snapshot_date, "places")
     facilities_geojson = ohsome.fetch_elements(bounds, "amenity=hospital or healthcare=hospital", osm_snapshot_date, "facilities")
 
-    # 3. Sentinel-1 SAR Same-Track Pair Ingest & Change Detection
-    logger.info("[Stage 3/7] Ingesting same-track Sentinel-1 SAR and computing change statistics...")
+    # 3. Sentinel-1 SAR Same-Track Pair Ingest, Geometry Gate & Change Detection
+    logger.info("[Stage 3/7] Ingesting same-track Sentinel-1 SAR and running geometry gate...")
     cdse = CDSEClient(allow_mock=True)
     sar_backend = DefaultSarBackend(cdse_client=cdse)
     pre_s1, post_s1, s1_stack = sar_backend.get_same_track_pair(bounds, event_date, elevation, transform, crs)
 
+    geom_gate = SarGeometryGate(nominal_look_angle_deg=38.0)
+    geom_out = geom_gate.compute_geometry(elevation, resolution_m=30.0, orbit_direction=post_s1.orbit_direction)
+
     detector = SarChangeDetector()
     change_result = detector.detect_change(pre_s1, post_s1, s1_stack)
 
-    # 4. Evidence Fusion & Raster Export
+    # 4. Optical Spectral Indices & Clear Sky Evidence
+    logger.info("Extracting Sentinel-2 optical spectral indices and cloud gates...")
+    opt_analyzer = OpticalEvidenceAnalyzer()
+    opt_pre_bands = opt_analyzer.generate_synthetic_bands(elevation, is_post=False)
+    opt_post_bands = opt_analyzer.generate_synthetic_bands(elevation, is_post=True)
+    opt_evidence = opt_analyzer.analyze_change(opt_pre_bands, opt_post_bands)
+
+    # Combined multi-evidence LLRs weighted by reliability and hydraulic prior
+    # logit P = logit P_hyd + r_geo * LLR_sar + r_opt * LLR_opt
+    logit_hyd = np.log(np.clip(hand_bundle.hydraulic_prior / (1.0 - hand_bundle.hydraulic_prior), 1e-4, 1e4))
+    combined_water_llr = logit_hyd + geom_out.r_geo * change_result.water_llr + opt_evidence.reliability * opt_evidence.water_llr
+    combined_debris_llr = logit_hyd * 0.8 + geom_out.r_geo * change_result.debris_llr + opt_evidence.reliability * opt_evidence.debris_llr
+    total_reliability = np.maximum(geom_out.r_geo, opt_evidence.reliability)
+
+    # 5. Evidence Fusion & Raster Export
     logger.info("[Stage 4/7] Fusing multi-evidence posteriors and exporting GeoTIFFs...")
     postprocessor = FusionPostprocessor()
     fusion_outputs = postprocessor.process(
-        water_llr=change_result.water_llr,
-        debris_llr=change_result.debris_llr,
-        reliability=change_result.reliability,
+        water_llr=combined_water_llr,
+        debris_llr=combined_debris_llr,
+        reliability=total_reliability,
+        blindspot_mask=geom_out.blindspot_mask.astype(np.int16),
     )
     raster_paths = postprocessor.export_rasters(fusion_outputs, transform, crs, out_dir)
 
