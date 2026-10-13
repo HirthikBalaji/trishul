@@ -223,6 +223,101 @@ def get_flowpath(run_id: str):
         return json.load(f)
 
 
+@app.get("/api/run/{run_id}/raster/bounds")
+def get_raster_bounds(run_id: str):
+    """Retrieve bounding box and 4-corner coordinates for MapLibre ImageSource."""
+    import rasterio
+    run_dir = resolve_run_dir(run_id)
+    tif_path = run_dir / "hazard_class.tif"
+    if not tif_path.exists():
+        tif_path = run_dir / "hazard_prob.tif"
+    if not tif_path.exists():
+        raise HTTPException(status_code=404, detail="Hazard raster not found")
+
+    with rasterio.open(tif_path) as src:
+        b = src.bounds
+        coords = [
+            [b.left, b.top],
+            [b.right, b.top],
+            [b.right, b.bottom],
+            [b.left, b.bottom],
+        ]
+        return {
+            "coordinates": coords,
+            "bbox": [b.left, b.bottom, b.right, b.top],
+            "center": [(b.left + b.right) / 2.0, (b.top + b.bottom) / 2.0],
+        }
+
+
+@app.get("/api/run/{run_id}/raster/hazard.png")
+def get_hazard_png(run_id: str):
+    """Render transparent RGBA PNG overlay from hazard_class.tif."""
+    from io import BytesIO
+
+    import numpy as np
+    import rasterio
+    from fastapi.responses import Response
+    from PIL import Image
+
+    run_dir = resolve_run_dir(run_id)
+    tif_path = run_dir / "hazard_class.tif"
+    if not tif_path.exists():
+        raise HTTPException(status_code=404, detail="hazard_class.tif not found")
+
+    with rasterio.open(tif_path) as src:
+        arr = src.read(1)
+        h, w = arr.shape
+        rgba = np.zeros((h, w, 4), dtype=np.uint8)
+
+        # Class 1: Permanent water -> Cyan
+        rgba[arr == 1] = [0, 168, 204, 200]
+        # Class 2: Flood water -> Deep Blue
+        rgba[arr == 2] = [30, 90, 240, 220]
+        # Class 3: Debris flow -> Amber / Terracotta
+        rgba[arr == 3] = [220, 110, 20, 210]
+        # Class 6 / other: Scour / channel inundation -> Crimson
+        rgba[arr == 6] = [200, 40, 40, 220]
+        rgba[(arr != 0) & (arr != 1) & (arr != 2) & (arr != 3) & (arr != 6)] = [220, 110, 20, 180]
+
+        img = Image.fromarray(rgba, mode="RGBA")
+        buf = BytesIO()
+        img.save(buf, format="PNG")
+        buf.seek(0)
+        return Response(content=buf.getvalue(), media_type="image/png")
+
+
+@app.get("/api/run/{run_id}/raster/blindspot.png")
+def get_blindspot_png(run_id: str):
+    """Render transparent RGBA PNG overlay for radar shadow and layover."""
+    from io import BytesIO
+
+    import numpy as np
+    import rasterio
+    from fastapi.responses import Response
+    from PIL import Image
+
+    run_dir = resolve_run_dir(run_id)
+    tif_path = run_dir / "blindspot.tif"
+    if not tif_path.exists():
+        raise HTTPException(status_code=404, detail="blindspot.tif not found")
+
+    with rasterio.open(tif_path) as src:
+        arr = src.read(1)
+        h, w = arr.shape
+        rgba = np.zeros((h, w, 4), dtype=np.uint8)
+
+        # Class 1: Radar shadow / extreme terrain occlusion -> Hatched yellow/amber
+        rgba[arr == 1] = [245, 158, 11, 160]
+        rgba[arr == 2] = [234, 88, 12, 170]
+
+        img = Image.fromarray(rgba, mode="RGBA")
+        buf = BytesIO()
+        img.save(buf, format="PNG")
+        buf.seek(0)
+        return Response(content=buf.getvalue(), media_type="image/png")
+
+
+
 @app.post("/api/run/{run_id}/chat")
 def chat_copilot(run_id: str, payload: dict[str, Any]):
     """Grounded Situation Report Copilot answering rescuers' tactical queries."""

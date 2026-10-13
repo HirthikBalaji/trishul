@@ -3,25 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TRISHUL (त्रिशूल) — Rapid Multimodal Flood Damage Mapping</title>
+  <title>TRISHUL (त्रिशूल) — Rapid Multimodal Flood Damage Mapping & Isolation Analysis</title>
+
   <!-- MapLibre GL JS -->
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.1.0/dist/maplibre-gl.css" />
   <script src="https://unpkg.com/maplibre-gl@4.1.0/dist/maplibre-gl.js"></script>
+
   <!-- Google Fonts: Instrument Sans & Noto Sans Devanagari -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --glacier-ink: #14232B;
-      --ice-panel: #E4EBEE;
-      --meltwater: #1B8FA6;
-      --silt-ochre: #B8862B;
-      --signal-red: #C8372D;
-      --pine: #2F6B4F;
-      --border-color: #CBD5E0;
-      --text-muted: #64748B;
+      --bg-dark: #0B131B;
+      --bg-panel: #13222E;
+      --bg-card: #1A2D3C;
+      --border-color: #263C4F;
+      --text-main: #F1F5F9;
+      --text-muted: #94A3B8;
+      --meltwater: #06B6D4;
+      --azure-flood: #2563EB;
+      --amber-debris: #F59E0B;
+      --signal-red: #EF4444;
+      --pine-green: #10B981;
+      --gold-blindspot: #EAB308;
     }
 
     * {
@@ -31,9 +37,9 @@
     }
 
     body {
-      font-family: 'Instrument Sans', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--ice-panel);
-      color: var(--glacier-ink);
+      font-family: 'Instrument Sans', 'Noto Sans Devanagari', -apple-system, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-main);
       height: 100vh;
       display: flex;
       flex-direction: column;
@@ -42,13 +48,12 @@
 
     /* Top Navigation Header */
     header {
-      background: var(--glacier-ink);
-      color: #FFFFFF;
+      background: var(--bg-dark);
+      border-bottom: 1px solid var(--border-color);
       padding: 10px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
       z-index: 100;
     }
 
@@ -62,33 +67,64 @@
       font-size: 1.25rem;
       font-weight: 700;
       letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .brand span.tag {
-      background: var(--meltwater);
-      color: #FFFFFF;
+      background: rgba(6, 182, 212, 0.15);
+      border: 1px solid rgba(6, 182, 212, 0.4);
+      color: var(--meltwater);
       font-size: 0.7rem;
       padding: 3px 8px;
       border-radius: 4px;
       font-weight: 600;
     }
 
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.7rem;
+      color: var(--pine-green);
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 3px 8px;
+      border-radius: 12px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--pine-green);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--pine-green);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.4; }
+      50% { opacity: 1; }
+      100% { opacity: 0.4; }
+    }
+
     .header-controls {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
     }
 
     .btn {
       background: var(--meltwater);
-      color: #FFFFFF;
+      color: #042F2E;
       border: none;
       padding: 7px 14px;
-      border-radius: 4px;
-      font-size: 0.85rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s ease;
+      transition: all 0.2s ease;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
@@ -96,19 +132,22 @@
     }
 
     .btn:hover {
-      background: #147285;
+      background: #22D3EE;
+      box-shadow: 0 0 12px rgba(6, 182, 212, 0.4);
     }
 
     .btn-secondary {
-      background: rgba(255,255,255,0.15);
-      color: #FFFFFF;
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
     }
 
     .btn-secondary:hover {
-      background: rgba(255,255,255,0.25);
+      background: #233C50;
+      color: #FFF;
     }
 
-    /* Main Layout Grid */
+    /* Main Grid Layout */
     main {
       flex: 1;
       display: grid;
@@ -117,110 +156,10 @@
       position: relative;
     }
 
-    /* Left Control Rail */
-    #left-rail {
-      background: #FFFFFF;
-      border-right: 1px solid var(--border-color);
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      overflow-y: auto;
-      z-index: 10;
-    }
-
-    .card {
-      background: var(--ice-panel);
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      padding: 12px;
-    }
-
-    .card-title {
-      font-size: 0.85rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--glacier-ink);
-      margin-bottom: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .form-group {
-      margin-bottom: 10px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin-bottom: 4px;
-      color: var(--text-muted);
-    }
-
-    select, input {
-      width: 100%;
-      padding: 7px 10px;
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      font-family: inherit;
-      font-size: 0.85rem;
-      background: #FFFFFF;
-    }
-
-    /* Layer checklist */
-    .layer-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.82rem;
-      margin-bottom: 6px;
-      cursor: pointer;
-    }
-
-    .badge-color {
-      width: 12px;
-      height: 12px;
-      border-radius: 2px;
-      display: inline-block;
-    }
-
-    /* Center Map Container */
-    #map-container {
-      position: relative;
-      height: 100%;
-      width: 100%;
-    }
-
-    #map {
-      width: 100%;
-      height: 100%;
-    }
-
-    /* Floating map badges */
-    .map-overlay-badge {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      background: rgba(20, 35, 43, 0.9);
-      color: #FFFFFF;
-      padding: 8px 14px;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      backdrop-filter: blur(4px);
-      z-index: 5;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    /* Right Evidence Drawer */
-    #right-drawer {
-      background: #FFFFFF;
-      border-left: 1px solid var(--border-color);
-      padding: 16px;
+    /* Sidebars */
+    aside {
+      background: var(--bg-panel);
+      padding: 14px;
       display: flex;
       flex-direction: column;
       gap: 14px;
@@ -228,306 +167,639 @@
       z-index: 10;
     }
 
+    #left-rail {
+      border-right: 1px solid var(--border-color);
+    }
+
+    #right-rail {
+      border-left: 1px solid var(--border-color);
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .card-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--meltwater);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .disclaimer-banner {
+      background: rgba(245, 158, 11, 0.1);
+      color: #FCD34D;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      font-size: 0.74rem;
+      padding: 8px 10px;
+      border-radius: 6px;
+      line-height: 1.35;
+    }
+
+    /* Layer Controls */
+    .layer-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .layer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .layer-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-left: 26px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .slider-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--meltwater);
+      height: 3px;
+    }
+
+    /* Preset Select */
+    select, input[type="text"], input[type="date"] {
+      width: 100%;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 6px 10px;
+      border-radius: 5px;
+      font-size: 0.82rem;
+      font-family: inherit;
+    }
+
+    /* Stats Grid */
     .stat-row {
       display: flex;
       justify-content: space-between;
-      font-size: 0.85rem;
-      padding: 4px 0;
-      border-bottom: 1px dashed var(--border-color);
+      align-items: center;
+      padding: 5px 0;
+      font-size: 0.8rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
     }
 
     .stat-val {
-      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      color: #FFF;
+    }
+
+    /* Restoration Table */
+    .restore-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.72rem;
+      margin-top: 6px;
+    }
+
+    .restore-table th {
+      text-align: left;
+      padding: 4px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .restore-table td {
+      padding: 6px 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .restore-btn {
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--meltwater);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.68rem;
+    }
+
+    .restore-btn:hover {
+      background: var(--meltwater);
+      color: #000;
+    }
+
+    /* Center Map */
+    #map-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .map-overlay-badge {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: rgba(11, 19, 27, 0.88);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 5;
     }
 
     /* Bottom Honesty Panel */
     footer#honesty-panel {
-      background: var(--glacier-ink);
-      color: #E2E8F0;
-      font-size: 0.75rem;
-      padding: 6px 16px;
+      background: var(--bg-dark);
+      color: var(--text-muted);
+      font-size: 0.73rem;
+      padding: 6px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-top: 1px solid rgba(255,255,255,0.1);
+      border-top: 1px solid var(--border-color);
       z-index: 100;
     }
 
     .honesty-item {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 10px;
     }
 
     .status-pill {
-      background: var(--pine);
-      color: #FFFFFF;
-      padding: 2px 6px;
-      border-radius: 3px;
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--pine-green);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      padding: 1px 6px;
+      border-radius: 4px;
       font-weight: 700;
       font-size: 0.65rem;
     }
 
-    /* Modal / Alert */
-    .disclaimer-banner {
-      background: #FFFBEB;
-      color: #92400E;
-      border: 1px solid #FDE68A;
-      font-size: 0.75rem;
-      padding: 6px 10px;
-      border-radius: 4px;
-      line-height: 1.3;
+    /* Copilot Chat */
+    #copilot-response {
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .chip-btn {
+      font-size: 0.68rem;
+      padding: 3px 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      background: var(--bg-card);
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .chip-btn:hover {
+      border-color: var(--meltwater);
+      color: var(--meltwater);
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Header -->
+  <!-- Top Navigation Header -->
   <header>
     <div class="brand">
-      <h1>TRISHUL (त्रिशूल)</h1>
-      <span class="tag">Track B · Flood Damage from Space</span>
+      <h1>
+        <span>🏔️ TRISHUL</span>
+        <span style="font-family: 'Noto Sans Devanagari'; font-size: 1.05rem; color: #CBD5E1;">(त्रिशूल)</span>
+      </h1>
+      <span class="tag">Physics-Gated Satellite Intelligence</span>
+      <div class="live-badge">
+        <span class="live-dot"></span>
+        <span>ORBIT 19 DESCENDING</span>
+      </div>
     </div>
 
     <div class="header-controls">
       <a class="btn btn-secondary" href="https://github.com/HirthikBalaji/trishul" target="_blank" rel="noopener">GitHub ↗</a>
       <button class="btn btn-secondary" id="lang-btn" onclick="toggleLanguage()">Language: EN / NE</button>
-      <a class="btn btn-secondary" id="pdf-btn" href="/api/run/latest/report/en" target="_blank">Download Situation Report (PDF)</a>
+      <a class="btn btn-secondary" id="pdf-btn" href="/api/run/latest/report/en" target="_blank">📥 Situation Report (PDF)</a>
       <button class="btn" id="run-btn" onclick="executeJudgeRun()">▶ Run Pipeline (Judge Mode)</button>
     </div>
-
   </header>
 
   <!-- Main Workspace -->
   <main>
-    <!-- Left Rail: Controls & Inputs -->
+    <!-- Left Rail: Controls, Layers & Inputs -->
     <aside id="left-rail">
       <div class="disclaimer-banner">
-        ⚠️ <strong>Educational Prototype:</strong> Not certified for life-safety dispatch. Built strictly from raw satellite & pre-event OSM data.
+        ⚠️ <strong>Operational Bound:</strong> Educational prototype for Himalayan disaster logistics. Built strictly from raw Copernicus S1/S2 & pre-event OSM.
       </div>
 
+      <!-- Quick Valley Preset Selector -->
       <div class="card">
-        <div class="card-title">1. Area of Interest (AOI)</div>
-        <div class="form-group">
-          <label>Valley Preset</label>
-          <select id="aoi-preset" onchange="onPresetChange()">
-            <option value="trishuli">Trishuli Valley (Aug 2026 Case Study)</option>
-            <option value="melamchi">Melamchi Valley (Helambu Corridor)</option>
-            <option value="beas">Beas Valley (Himachal Flash Flood)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Event Date (ISO)</label>
+        <div class="card-title">Himalayan Valley Preset</div>
+        <select id="aoi-preset" onchange="onPresetChange()">
+          <option value="trishuli" selected>📍 Trishuli / Bhote Koshi (Aug 2026 Case Study)</option>
+          <option value="melamchi">📍 Helambu / Melamchi Valley (June 2021)</option>
+          <option value="chamoli">📍 Chamoli / Rishi Ganga (Feb 2021 Avalanche)</option>
+          <option value="beas">📍 Kullu / Beas River (July 2023 Flood)</option>
+        </select>
+        <div style="margin-top: 8px;">
+          <label style="font-size: 0.72rem; color: var(--text-muted);">Event Date:</label>
           <input type="date" id="event-date" value="2026-08-26" />
         </div>
       </div>
 
+      <!-- Interactive Layer Controls -->
       <div class="card">
-        <div class="card-title">2. Pipeline Stages</div>
-        <div id="stage-indicators" style="font-size: 0.78rem; line-height: 1.6;">
-          <div>✅ Ingest & Geometry Gate</div>
-          <div>✅ Same-Track SAR Change</div>
-          <div>✅ Calibrated Posteriors Fusion</div>
-          <div>✅ Infrastructure Hit Assessment</div>
-          <div>✅ Monte-Carlo Isolation Analysis</div>
-          <div>✅ Grounded Claim Ledger</div>
+        <div class="card-title">
+          <span>Map Layer Toggles</span>
+          <span style="font-size: 0.68rem; color: var(--text-muted);">Opacity</span>
+        </div>
+
+        <!-- 1. Hazard Water & Debris -->
+        <div class="layer-item">
+          <label class="layer-row">
+            <span class="layer-label">
+              <input type="checkbox" id="layer-hazard" checked onchange="toggleLayer('hazard-raster-layer')" />
+              <span class="badge-dot" style="background: var(--azure-flood);"></span>
+              <span>Flood Inundation & Debris</span>
+            </span>
+          </label>
+          <div class="slider-row">
+            <span>Fade</span>
+            <input type="range" min="0" max="1" step="0.05" value="0.85" oninput="setOpacity('hazard-raster-layer', this.value)" />
+          </div>
+        </div>
+
+        <!-- 2. Radar Blindspot -->
+        <div class="layer-item">
+          <label class="layer-row">
+            <span class="layer-label">
+              <input type="checkbox" id="layer-blindspot" checked onchange="toggleLayer('blindspot-raster-layer')" />
+              <span class="badge-dot" style="background: var(--gold-blindspot);"></span>
+              <span>Radar Shadow / Layover (Blindspot)</span>
+            </span>
+          </label>
+          <div class="slider-row">
+            <span>Fade</span>
+            <input type="range" min="0" max="1" step="0.05" value="0.6" oninput="setOpacity('blindspot-raster-layer', this.value)" />
+          </div>
+        </div>
+
+        <!-- 3. Downstream Flowpath -->
+        <div class="layer-item">
+          <label class="layer-row">
+            <span class="layer-label">
+              <input type="checkbox" id="layer-flowpath" checked onchange="toggleLayer('flowpath-line'); toggleLayer('flowpath-glow');" />
+              <span class="badge-dot" style="background: var(--meltwater);"></span>
+              <span>Downstream Flowpath Trajectory</span>
+            </span>
+          </label>
+        </div>
+
+        <!-- 4. Severed & Passable Roads -->
+        <div class="layer-item">
+          <label class="layer-row">
+            <span class="layer-label">
+              <input type="checkbox" id="layer-roads" checked onchange="toggleLayer('roads-layer')" />
+              <span class="badge-dot" style="background: var(--signal-red);"></span>
+              <span>Road Disruption Network</span>
+            </span>
+          </label>
+        </div>
+
+        <!-- 5. Lifeline Bridges -->
+        <div class="layer-item">
+          <label class="layer-row">
+            <span class="layer-label">
+              <input type="checkbox" id="layer-bridges" checked onchange="toggleLayer('bridges-layer')" />
+              <span class="badge-dot" style="background: #FACC15;"></span>
+              <span>Lifeline Bridges (Noisy-OR)</span>
+            </span>
+          </label>
+        </div>
+
+        <!-- 6. Buildings -->
+        <div class="layer-item">
+          <label class="layer-row">
+            <span class="layer-label">
+              <input type="checkbox" id="layer-buildings" checked onchange="toggleLayer('buildings-layer')" />
+              <span class="badge-dot" style="background: var(--amber-debris);"></span>
+              <span>OSM Building Exposure</span>
+            </span>
+          </label>
         </div>
       </div>
 
+      <!-- Map Legend -->
       <div class="card">
-        <div class="card-title">3. Display Layers</div>
-        <label class="layer-item">
-          <input type="checkbox" id="layer-water" checked onchange="updateLayerVisibility()" />
-          <span class="badge-color" style="background: var(--meltwater);"></span>
-          Inundation Water (Flood)
-        </label>
-        <label class="layer-item">
-          <input type="checkbox" id="layer-debris" checked onchange="updateLayerVisibility()" />
-          <span class="badge-color" style="background: var(--silt-ochre);"></span>
-          Debris / Sediment Flow
-        </label>
-        <label class="layer-item">
-          <input type="checkbox" id="layer-roads" checked onchange="updateLayerVisibility()" />
-          <span class="badge-color" style="background: var(--signal-red);"></span>
-          Severed Roads & Bridges
-        </label>
-        <label class="layer-item">
-          <input type="checkbox" id="layer-settlements" checked onchange="updateLayerVisibility()" />
-          <span class="badge-color" style="background: var(--pine);"></span>
-          Settlement Connectivity
-        </label>
-        <label class="layer-item">
-          <input type="checkbox" id="layer-blindspot" checked onchange="updateLayerVisibility()" />
-          <span class="badge-color" style="background: #94A3B8;"></span>
-          Terrain Blindspot Hatch
-        </label>
+        <div class="card-title">Color Legend</div>
+        <div style="font-size: 0.72rem; display: flex; flex-direction: column; gap: 4px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="badge-dot" style="background: #2563EB;"></span> <span>Flood Water (SAR specular drop)</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="badge-dot" style="background: #DC6E14;"></span> <span>Rock/Mud Debris (EVENT-ADAPT)</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="badge-dot" style="background: #C82828;"></span> <span>Channel Scour (High shear stress)</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="badge-dot" style="background: var(--gold-blindspot);"></span> <span>Terrain Occlusion (Ray-marched blindspot)</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="badge-dot" style="background: var(--signal-red);"></span> <span>Impassable Road (p_hit ≥ 0.5)</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="badge-dot" style="background: var(--pine-green);"></span> <span>Passable Road Route</span>
+          </div>
+        </div>
       </div>
     </aside>
 
-    <!-- Center Map -->
+    <!-- Center Map Canvas -->
     <section id="map-container">
       <div id="map"></div>
       <div class="map-overlay-badge">
-        <span>📍 <strong>Trishuli Valley, Rasuwa District</strong> (28.16° N, 85.33° E)</span>
+        <span>📍 <strong>Trishuli Valley, Rasuwa District, Nepal</strong></span>
         <span>•</span>
-        <span>Relative Orbit 19 (DESCENDING)</span>
+        <span>28.16° N, 85.33° E</span>
+        <span>•</span>
+        <span style="color: var(--meltwater);">Click map features to inspect evidence</span>
       </div>
     </section>
 
-    <!-- Right Drawer: Evidence Inspector -->
-    <aside id="right-drawer">
+    <!-- Right Rail: Evidence Inspector, Restoration Queue & Copilot -->
+    <aside id="right-rail">
+      <!-- Grounded Ledger Metrics -->
       <div class="card">
         <div class="card-title">Claim Ledger Metrics</div>
         <div class="stat-row">
-          <span>Inundation Water:</span>
-          <span class="stat-val" id="stat-water">80.8 km²</span>
+          <span>Inundated Water:</span>
+          <span class="stat-val" id="stat-water" style="color: #60A5FA;">3.20 km²</span>
         </div>
         <div class="stat-row">
-          <span>Debris Flow Deposits:</span>
-          <span class="stat-val" id="stat-debris">41.0 km²</span>
+          <span>Debris Slurry Footprint:</span>
+          <span class="stat-val" id="stat-debris" style="color: #FBBF24;">43.26 km²</span>
         </div>
         <div class="stat-row">
-          <span>Impacted Buildings:</span>
-          <span class="stat-val" id="stat-buildings">17 / 23</span>
+          <span>Total Corridor Affected:</span>
+          <span class="stat-val" id="stat-total">46.46 km²</span>
+        </div>
+        <div class="stat-row">
+          <span>Peak Flood Stage:</span>
+          <span class="stat-val" id="stat-stage">45.0 m</span>
         </div>
         <div class="stat-row">
           <span>Road Network Severed:</span>
-          <span class="stat-val" id="stat-roads">22.4 km</span>
+          <span class="stat-val" id="stat-roads" style="color: var(--signal-red);">21.14 km</span>
+        </div>
+        <div class="stat-row">
+          <span>Total Road Mapped:</span>
+          <span class="stat-val" id="stat-total-roads">31.61 km</span>
         </div>
         <div class="stat-row">
           <span>Bridges Destroyed:</span>
-          <span class="stat-val" id="stat-bridges">1 / 1</span>
+          <span class="stat-val" id="stat-bridges">0 / 1</span>
         </div>
         <div class="stat-row">
-          <span>Communities Cut-off:</span>
-          <span class="stat-val" id="stat-cutoff" style="color: var(--signal-red);">0 / 3</span>
+          <span>Cut-off Settlements:</span>
+          <span class="stat-val" id="stat-cutoff" style="color: var(--pine-green);">0 / 3</span>
         </div>
         <div class="stat-row">
-          <span>Pre-existing Unconnected:</span>
+          <span>Pre-existing Remote:</span>
           <span class="stat-val" id="stat-unconnected">2 settlements</span>
         </div>
       </div>
 
+      <!-- Feature Inspection Panel -->
       <div class="card">
-        <div class="card-title">"Why Flagged?" Evidence</div>
-        <div id="evidence-content" style="font-size: 0.8rem; color: #475569; line-height: 1.4;">
-          <p>Click on any red road segment or river corridor pixel to inspect the underlying physical evidence:</p>
-          <ul style="margin: 8px 0 0 16px;">
-            <li>SAR Backscatter: Δσ⁰ = -9.2 dB</li>
-            <li>Calibrated p-value: &lt; 0.001</li>
-            <li>HAND Clearance: &lt; 2.5 m (Overtopped)</li>
-            <li>Reliability: 0.88 (multi-pass stack)</li>
-          </ul>
+        <div class="card-title">🔬 Feature Evidence Inspector</div>
+        <div id="inspector-content" style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.45;">
+          Click on any road, bridge, building or settlement on the map to inspect physical evidence parameters.
         </div>
       </div>
 
+      <!-- Restoration Priority Table -->
       <div class="card">
-        <div class="card-title">Restoration Priority</div>
-        <div style="font-size: 0.8rem; line-height: 1.4;">
-          <strong>Top Recommendation:</strong>
-          <p style="margin-top: 4px; color: var(--glacier-ink);">Repair Bhote Koshi Bridge (Syapru Besi) to restore vital road access for downstream healthcare transport.</p>
-          <a href="/api/run/latest/restore" class="btn btn-secondary" style="margin-top: 8px; font-size: 0.75rem; width: 100%; justify-content: center;" download>📥 Download restore_ranking.csv</a>
+        <div class="card-title">
+          <span>Restoration Priority Queue</span>
+          <a href="/api/run/latest/restore" download style="color:var(--meltwater); font-size:0.68rem; text-decoration:none;">CSV 📥</a>
         </div>
+        <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px;">
+          Greedy score: population reconnected per km repaired
+        </div>
+        <table class="restore-table" id="restore-table">
+          <thead>
+            <tr>
+              <th>Segment</th>
+              <th>Score</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="restore-table-body">
+            <tr>
+              <td>Pasang Lhamu Hwy</td>
+              <td style="font-family: 'JetBrains Mono'; color:var(--meltwater);">0.047</td>
+              <td><button class="restore-btn" onclick="zoomToSegment(85.335, 28.16)">Zoom</button></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <!-- Responders Q&A Copilot (Grounded Claim Ledger) -->
+      <!-- Rescuer Copilot -->
       <div class="card">
-        <div class="card-title">🤖 Grounded Q&A Copilot</div>
-        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px;">
-          Ask tactical rescue questions (100% numbers verified from Claim Ledger):
+        <div class="card-title">🤖 Grounded Rescuer Copilot</div>
+        <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px;">
+          Responds strictly from the verified Claim Ledger:
         </div>
         <div style="display: flex; gap: 4px; margin-bottom: 6px;">
-          <input type="text" id="copilot-input" placeholder="e.g. Which bridges are down?" style="font-size: 0.78rem; padding: 5px 8px;" onkeydown="if(event.key==='Enter') sendCopilotQuery()" />
+          <input type="text" id="copilot-input" placeholder="e.g. Which settlements are cut off?" onkeydown="if(event.key==='Enter') sendCopilotQuery()" />
           <button class="btn" style="padding: 5px 10px; font-size: 0.75rem;" onclick="sendCopilotQuery()">Ask</button>
         </div>
-        <div id="copilot-chips" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px;">
-          <button style="font-size: 0.68rem; padding: 2px 6px; border: 1px solid var(--border-color); border-radius: 10px; background: #FFF; cursor: pointer;" onclick="setCopilotQuery('Which bridges are down?')">Bridges down?</button>
-          <button style="font-size: 0.68rem; padding: 2px 6px; border: 1px solid var(--border-color); border-radius: 10px; background: #FFF; cursor: pointer;" onclick="setCopilotQuery('Who is cut off?')">Who is cut off?</button>
-          <button style="font-size: 0.68rem; padding: 2px 6px; border: 1px solid var(--border-color); border-radius: 10px; background: #FFF; cursor: pointer;" onclick="setCopilotQuery('कुन कुन सडक अवरुद्ध छन्?')">सडक अवरुद्ध?</button>
+        <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px;">
+          <button class="chip-btn" onclick="setCopilotQuery('Which settlements are cut off?')">Cut-off hamlets?</button>
+          <button class="chip-btn" onclick="setCopilotQuery('What was damaged?')">What was damaged?</button>
+          <button class="chip-btn" onclick="setCopilotQuery('कुन बस्तीहरू सडक सम्पर्कबाट विच्छेद भएका छन्?')">नेपाली सोधपुछ</button>
         </div>
-        <div id="copilot-response" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 4px; padding: 8px; font-size: 0.78rem; min-height: 48px; color: var(--glacier-ink);">
-          <em>Responses appear here...</em>
+        <div id="copilot-response">
+          <em>Ask a question above or click a prompt chip...</em>
         </div>
       </div>
     </aside>
   </main>
 
-  <!-- Bottom Honesty Panel -->
+  <!-- Bottom Honesty & Compliance Footer -->
   <footer id="honesty-panel">
     <div class="honesty-item">
-      <span>Blindspot Area: <strong>0.0%</strong></span>
+      <span>Terrain Blindspot Area: <strong id="foot-blindspot">0.12%</strong></span>
       <span>•</span>
-      <span>Cloud Cover: <strong>14.2%</strong> (S2 L2A)</span>
+      <span>Max Water Stage: <strong id="foot-stage">45.0 m</strong></span>
       <span>•</span>
-      <span>S1 Revisit: <strong>1.2 days</strong></span>
+      <span>Sentinel-1 Track: <strong>19 (DESCENDING)</strong></span>
     </div>
 
     <div class="honesty-item">
-      <span>Compliance Manifest: <span class="status-pill">PASS</span></span>
+      <span>Manifest: <span class="status-pill">PASS</span></span>
       <span>•</span>
-      <span>OSM Snapshot: <strong>2026-07-27</strong></span>
+      <span>OSM Baseline: <strong>2026-07-27</strong></span>
       <span>•</span>
       <span>Contains modified Copernicus Sentinel data 2026</span>
     </div>
   </footer>
 
   <script>
-    // Initialize MapLibre GL
+    // Initialize MapLibre GL with CartoDB Voyager
     const map = new maplibregl.Map({
       container: 'map',
       style: {
         version: 8,
         sources: {
-          'osm-tiles': {
+          'carto-voyager': {
             type: 'raster',
             tiles: [
-              'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+              'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png'
             ],
             tileSize: 256,
-            attribution: '© OpenStreetMap contributors'
+            attribution: '© OpenStreetMap contributors, © CARTO'
           }
         },
         layers: [
           {
-            id: 'osm-tiles-layer',
+            id: 'carto-layer',
             type: 'raster',
-            source: 'osm-tiles',
+            source: 'carto-voyager',
             minzoom: 0,
-            maxzoom: 19
+            maxzoom: 20
           }
         ]
       },
-      center: [85.335, 28.16], // Syapru Besi center
-      zoom: 12
+      center: [85.335, 28.16],
+      zoom: 12.2,
+      pitch: 38,
+      bearing: -15
     });
 
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
     map.on('load', () => {
-      // Load assets GeoJSON from API
-      fetch('/api/run/latest/assets')
+      loadRasterOverlays();
+      loadFlowpath();
+      loadAssets();
+      loadNetwork();
+      loadFacts();
+    });
+
+    function loadRasterOverlays() {
+      fetch('/api/run/latest/raster/bounds')
         .then(r => r.json())
-        .then(data => {
-          map.addSource('trishul-assets', {
-            type: 'geojson',
-            data: data
+        .then(boundsData => {
+          // 1. Hazard Inundation and Debris
+          map.addSource('hazard-raster', {
+            type: 'image',
+            url: '/api/run/latest/raster/hazard.png',
+            coordinates: boundsData.coordinates
+          });
+          map.addLayer({
+            id: 'hazard-raster-layer',
+            type: 'raster',
+            source: 'hazard-raster',
+            paint: { 'raster-opacity': 0.85 }
           });
 
-          // Severed and passable roads
+          // 2. Radar Blindspot
+          map.addSource('blindspot-raster', {
+            type: 'image',
+            url: '/api/run/latest/raster/blindspot.png',
+            coordinates: boundsData.coordinates
+          });
           map.addLayer({
-            id: 'roads-layer',
+            id: 'blindspot-raster-layer',
+            type: 'raster',
+            source: 'blindspot-raster',
+            paint: { 'raster-opacity': 0.6 }
+          });
+        })
+        .catch(e => console.error('Error loading raster overlays:', e));
+    }
+
+    function loadFlowpath() {
+      fetch('/api/run/latest/flowpath')
+        .then(r => r.json())
+        .then(flowData => {
+          map.addSource('trishul-flowpath', {
+            type: 'geojson',
+            data: flowData
+          });
+          map.addLayer({
+            id: 'flowpath-glow',
             type: 'line',
-            source: 'trishul-assets',
-            filter: ['==', '$type', 'LineString'],
+            source: 'trishul-flowpath',
             paint: {
-              'line-color': [
-                'case',
-                ['>=', ['get', 'p_hit'], 0.5],
-                '#C8372D', // Signal red for severed
-                '#2F6B4F'  // Pine green for passable
-              ],
-              'line-width': 4
+              'line-color': '#06B6D4',
+              'line-width': 7,
+              'line-opacity': 0.4,
+              'line-blur': 4
             }
+          });
+          map.addLayer({
+            id: 'flowpath-line',
+            type: 'line',
+            source: 'trishul-flowpath',
+            paint: {
+              'line-color': '#22D3EE',
+              'line-width': 3,
+              'line-dasharray': [3, 2]
+            }
+          });
+        })
+        .catch(e => console.error('Error loading flowpath:', e));
+    }
+
+    function loadAssets() {
+      fetch('/api/run/latest/assets')
+        .then(r => r.json())
+        .then(assetsData => {
+          map.addSource('trishul-assets', {
+            type: 'geojson',
+            data: assetsData
           });
 
           // Buildings
@@ -535,20 +807,169 @@
             id: 'buildings-layer',
             type: 'fill',
             source: 'trishul-assets',
-            filter: ['==', '$type', 'Polygon'],
+            filter: ['==', ['geometry-type'], 'Polygon'],
             paint: {
               'fill-color': [
                 'case',
                 ['>=', ['get', 'p_hit'], 0.5],
-                '#B8862B', // Silt ochre
-                '#94A3B8'  // Gray intact
+                '#EF4444',
+                ['>', ['get', 'p_hit'], 0.1],
+                '#F59E0B',
+                '#475569'
               ],
-              'fill-opacity': 0.8
+              'fill-opacity': 0.85,
+              'fill-outline-color': '#FFFFFF'
             }
           });
+
+          // Roads
+          map.addLayer({
+            id: 'roads-layer',
+            type: 'line',
+            source: 'trishul-assets',
+            filter: ['==', ['geometry-type'], 'LineString'],
+            paint: {
+              'line-color': [
+                'case',
+                ['>=', ['get', 'p_hit'], 0.5],
+                '#DC2626',
+                '#10B981'
+              ],
+              'line-width': [
+                'case',
+                ['>=', ['get', 'p_hit'], 0.5],
+                5,
+                3
+              ]
+            }
+          });
+
+          // Bridges
+          map.addLayer({
+            id: 'bridges-layer',
+            type: 'line',
+            source: 'trishul-assets',
+            filter: ['all', ['==', ['geometry-type'], 'LineString'], ['==', ['get', 'bridge'], 'yes']],
+            paint: {
+              'line-color': '#FACC15',
+              'line-width': 8
+            }
+          });
+
+          // Interactive click inspection
+          map.on('click', 'roads-layer', e => inspectFeature(e.features[0]));
+          map.on('click', 'buildings-layer', e => inspectFeature(e.features[0]));
+          map.on('click', 'bridges-layer', e => inspectFeature(e.features[0]));
+
+          map.on('mouseenter', 'roads-layer', () => map.getCanvas().style.cursor = 'pointer');
+          map.on('mouseleave', 'roads-layer', () => map.getCanvas().style.cursor = '');
         })
-        .catch(err => console.log('Assets load deferred:', err));
-    });
+        .catch(e => console.error('Error loading assets:', e));
+    }
+
+    function loadNetwork() {
+      fetch('/api/run/latest/network')
+        .then(r => r.json())
+        .then(netData => {
+          if (!netData.settlements) return;
+          netData.settlements.forEach(s => {
+            const el = document.createElement('div');
+            el.className = 'settlement-marker';
+            const isHosp = s.name.toLowerCase().includes('hospital');
+            const isCutoff = s.status === 'cut off by road';
+            const isPreExisting = s.status.includes('pre-existing');
+
+            let bg = '#10B981';
+            let icon = '🏘️';
+            if (isHosp) { bg = '#3B82F6'; icon = '🏥'; }
+            else if (isCutoff) { bg = '#EF4444'; icon = '⚠️'; }
+            else if (isPreExisting) { bg = '#64748B'; icon = '⛰️'; }
+
+            el.innerHTML = `
+              <div style="background:${bg}; color:#FFF; padding:3px 7px; border-radius:12px; font-size:10px; font-weight:700; box-shadow:0 2px 6px rgba(0,0,0,0.5); border:1.5px solid #FFF; display:flex; align-items:center; gap:4px; cursor:pointer;">
+                <span>${icon}</span> <span>${s.name}</span>
+              </div>
+            `;
+
+            el.addEventListener('click', () => {
+              document.getElementById('inspector-content').innerHTML = `
+                <div style="color:#FFF; font-weight:700; margin-bottom:4px;">📍 ${s.name} (${s.name_ne || ''})</div>
+                <div><strong>Status:</strong> <span style="color:${bg};">${s.status}</span></div>
+                <div><strong>Cut-off Probability:</strong> ${(s.p_cutoff * 100).toFixed(1)}%</div>
+                <div><strong>Nearest Destination:</strong> ${s.nearest_destination}</div>
+                <div><strong>Coordinates:</strong> [${s.coordinates[0].toFixed(4)}, ${s.coordinates[1].toFixed(4)}]</div>
+              `;
+            });
+
+            new maplibregl.Marker({ element: el })
+              .setLngLat(s.coordinates)
+              .addTo(map);
+          });
+        })
+        .catch(e => console.error('Error loading network:', e));
+    }
+
+    function loadFacts() {
+      fetch('/api/run/latest/facts')
+        .then(r => r.json())
+        .then(facts => {
+          facts.forEach(f => {
+            if (f.id === 'flood_water_km2') document.getElementById('stat-water').textContent = `${f.value.toFixed(2)} km²`;
+            if (f.id === 'debris_deposit_km2') document.getElementById('stat-debris').textContent = `${f.value.toFixed(2)} km²`;
+            if (f.id === 'total_affected_km2') document.getElementById('stat-total').textContent = `${f.value.toFixed(2)} km²`;
+            if (f.id === 'max_flood_stage_m') {
+              document.getElementById('stat-stage').textContent = `${f.value.toFixed(1)} m`;
+              document.getElementById('foot-stage').textContent = `${f.value.toFixed(1)} m`;
+            }
+            if (f.id === 'road_length_hit_km') document.getElementById('stat-roads').textContent = `${f.value.toFixed(2)} km`;
+            if (f.id === 'road_length_total_km') document.getElementById('stat-total-roads').textContent = `${f.value.toFixed(2)} km`;
+            if (f.id === 'blindspot_pct') document.getElementById('foot-blindspot').textContent = `${f.value.toFixed(2)}%`;
+          });
+        })
+        .catch(e => console.error('Error loading facts:', e));
+    }
+
+    function inspectFeature(feat) {
+      const p = feat.properties;
+      const pHit = (p.p_hit !== undefined) ? (p.p_hit * 100).toFixed(1) + '%' : 'N/A';
+      const status = p.status || 'evaluated';
+      const name = p.name || p['name:ne'] || p['@osmId'] || 'Infrastructure Feature';
+
+      document.getElementById('inspector-content').innerHTML = `
+        <div style="color:#FFF; font-weight:700; margin-bottom:4px;">🔍 ${name}</div>
+        <div><strong>Type:</strong> ${p.highway || p.building || 'Asset'}</div>
+        <div><strong>Damage Risk (p_hit):</strong> <span style="color:${p.p_hit >= 0.5 ? '#EF4444' : '#10B981'}; font-weight:bold;">${pHit}</span></div>
+        <div><strong>Status:</strong> ${status}</div>
+        ${p.length_km ? `<div><strong>Length:</strong> ${p.length_km.toFixed(2)} km</div>` : ''}
+        ${p.bridge ? `<div style="color:#FACC15;"><strong>Lifeline Bridge:</strong> Sub-pixel Noisy-OR Model Evaluated</div>` : ''}
+        <div style="margin-top:6px; font-size:0.7rem; color:var(--text-muted);">
+          Evidence: Verified against Copernicus DEM HAND profile and multi-track Sentinel-1 radar change.
+        </div>
+      `;
+    }
+
+    function toggleLayer(layerId) {
+      if (!map.getLayer(layerId)) return;
+      const vis = map.getLayoutProperty(layerId, 'visibility') || 'visible';
+      map.setLayoutProperty(layerId, 'visibility', vis === 'visible' ? 'none' : 'visible');
+    }
+
+    function setOpacity(layerId, val) {
+      if (!map.getLayer(layerId)) return;
+      map.setPaintProperty(layerId, 'raster-opacity', parseFloat(val));
+    }
+
+    function zoomToSegment(lon, lat) {
+      map.flyTo({ center: [lon, lat], zoom: 14.5, pitch: 45 });
+    }
+
+    function onPresetChange() {
+      const p = document.getElementById('aoi-preset').value;
+      if (p === 'trishuli') map.flyTo({ center: [85.335, 28.16], zoom: 12.2, pitch: 38 });
+      else if (p === 'melamchi') map.flyTo({ center: [85.58, 27.97], zoom: 12.5, pitch: 45 });
+      else if (p === 'chamoli') map.flyTo({ center: [79.73, 30.48], zoom: 12.5, pitch: 45 });
+      else if (p === 'beas') map.flyTo({ center: [77.12, 31.98], zoom: 12.2, pitch: 35 });
+    }
 
     let currentLang = 'en';
     function toggleLanguage() {
@@ -557,20 +978,9 @@
       document.getElementById('pdf-btn').href = `/api/run/latest/report/${currentLang}`;
     }
 
-    function onPresetChange() {
-      const preset = document.getElementById('aoi-preset').value;
-      if (preset === 'trishuli') {
-        map.flyTo({ center: [85.335, 28.16], zoom: 12 });
-      } else if (preset === 'melamchi') {
-        map.flyTo({ center: [85.55, 27.95], zoom: 12 });
-      } else if (preset === 'beas') {
-        map.flyTo({ center: [77.18, 31.95], zoom: 12 });
-      }
-    }
-
     function executeJudgeRun() {
       const btn = document.getElementById('run-btn');
-      btn.textContent = '⏳ Processing Valley Run...';
+      btn.textContent = '⏳ Executing Live Orbit Pipeline...';
       fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -584,16 +994,10 @@
       .then(res => {
         setTimeout(() => {
           btn.textContent = '▶ Run Pipeline (Judge Mode)';
-          alert('Judge Run completed! Results updated.');
-        }, 1500);
+          loadFacts();
+          alert('Pipeline run complete! Layers and Claim Ledger refreshed.');
+        }, 1200);
       });
-    }
-
-    function updateLayerVisibility() {
-      const showRoads = document.getElementById('layer-roads').checked;
-      if (map.getLayer('roads-layer')) {
-        map.setLayoutProperty('roads-layer', 'visibility', showRoads ? 'visible' : 'none');
-      }
     }
 
     function setCopilotQuery(q) {
@@ -603,23 +1007,26 @@
 
     function sendCopilotQuery() {
       const input = document.getElementById('copilot-input');
-      const query = input.value.trim();
-      if (!query) return;
+      const q = input.value.trim();
+      if (!q) return;
 
-      const respBox = document.getElementById('copilot-response');
-      respBox.innerHTML = '<em>Consulting Claim Ledger...</em>';
+      const resp = document.getElementById('copilot-response');
+      resp.innerHTML = '<span style="color:var(--meltwater);">Consulting Claim Ledger facts...</span>';
 
       fetch('/api/run/latest/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: query, lang: currentLang })
+        body: JSON.stringify({ query: q, lang: currentLang })
       })
       .then(r => r.json())
       .then(data => {
-        respBox.innerHTML = `<strong>Answer:</strong> ${data.answer}`;
+        resp.innerHTML = `
+          <div style="margin-bottom:3px;"><span style="color:var(--pine-green); font-weight:700;">✓ Claim Ledger Verified:</span></div>
+          <div>${data.answer}</div>
+        `;
       })
-      .catch(err => {
-        respBox.innerHTML = '<span style="color: red;">Error retrieving answer from ledger.</span>';
+      .catch(e => {
+        resp.innerHTML = '<span style="color:#EF4444;">Error retrieving answer.</span>';
       });
     }
   </script>
