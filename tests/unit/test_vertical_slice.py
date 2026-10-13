@@ -52,8 +52,19 @@ def test_vertical_slice_pipeline(tmp_path: Path):
     assert "road_length_hit_km" in fact_ids
 
 
-def test_api_endpoints():
+def test_api_endpoints(tmp_path: Path, monkeypatch):
     """Verify FastAPI endpoints serve the latest run bundle and dashboard."""
+    import trishul.api.app as api_app
+
+    run_dir = tmp_path / "trishuli_aug2026"
+    run_pipeline(
+        aoi=[85.30, 28.12, 85.36, 28.18],
+        event_date="2026-08-26",
+        output_dir=run_dir,
+        run_id="test_slice_api",
+    )
+    monkeypatch.setattr(api_app, "RUNS_BASE_DIR", tmp_path)
+
     client = TestClient(app)
 
     # Health check
@@ -78,3 +89,4 @@ def test_api_endpoints():
     res_manifest = client.get("/api/run/latest/manifest")
     assert res_manifest.status_code == 200
     assert res_manifest.json()["compliance_verdict"] == "PASS"
+

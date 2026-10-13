@@ -44,7 +44,16 @@ def resolve_run_dir(run_id: str) -> Path:
         # Look for trishuli_aug2026 or most recently modified run folder
         candidates = [d for d in RUNS_BASE_DIR.glob("*") if d.is_dir()]
         if not candidates:
-            raise HTTPException(status_code=404, detail="No runs found in runs/ directory")
+            case_study_dir = RUNS_BASE_DIR / "trishuli_aug2026"
+            case_study_dir.mkdir(parents=True, exist_ok=True)
+            from trishul.pipeline import run_pipeline
+            run_pipeline(
+                aoi=[85.25, 28.08, 85.42, 28.24],
+                event_date="2026-08-26",
+                output_dir=case_study_dir,
+                run_id="trishuli_aug2026",
+            )
+            return case_study_dir
         # Prefer trishuli_aug2026 if exists
         case_study_dir = RUNS_BASE_DIR / "trishuli_aug2026"
         if case_study_dir.exists():
