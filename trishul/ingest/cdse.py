@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
-from trishul.compliance.manifest import ProductRecord
 from trishul.ingest.http_allowlist import CompliantHttpClient
 
 logger = logging.getLogger(__name__)
@@ -62,10 +61,10 @@ class CDSEClient:
             raise ValueError("CDSE credentials required. Set CDSE_USERNAME & CDSE_PASSWORD in .env")
 
         try:
-            data = {"grant_type": "client_credentials"}
+            data: dict[str, str] = {"grant_type": "client_credentials"}
             if self.client_id and self.client_secret:
                 data.update({"client_id": self.client_id, "client_secret": self.client_secret})
-            else:
+            elif self.username and self.password:
                 data.update({
                     "client_id": "cdse-public",
                     "username": self.username,

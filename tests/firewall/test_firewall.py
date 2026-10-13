@@ -2,12 +2,12 @@
 
 import ast
 from pathlib import Path
+
 import pytest
 
-from trishul.compliance.manifest import MANDATORY_ATTRIBUTIONS, RunManifest
+from trishul.compliance.manifest import RunManifest
 from trishul.ingest.http_allowlist import (
     ComplianceViolationError,
-    CompliantHttpClient,
     assert_url_allowed,
     is_host_allowed,
 )
@@ -42,7 +42,7 @@ def test_trishul_never_imports_eval():
                 if node.module and (node.module == "eval" or node.module.startswith("eval.")):
                     violations.append(f"{py_file.relative_to(ROOT_DIR)}: from {node.module} import ...")
 
-    assert not violations, f"Compliance Violation: trishul/ imports eval/ in:\n" + "\n".join(violations)
+    assert not violations, "Compliance Violation: trishul/ imports eval/ in:\n" + "\n".join(violations)
 
 
 def test_trishul_no_forbidden_strings():
@@ -57,7 +57,7 @@ def test_trishul_no_forbidden_strings():
             if forbidden in content:
                 violations.append(f"{py_file.relative_to(ROOT_DIR)} contains forbidden token '{forbidden}'")
 
-    assert not violations, f"Forbidden tokens found in trishul/ pipeline code:\n" + "\n".join(violations)
+    assert not violations, "Forbidden tokens found in trishul/ pipeline code:\n" + "\n".join(violations)
 
 
 def test_http_allowlist_enforcement():

@@ -42,8 +42,9 @@ htmlcov/
 cache/
 data/raw/
 data/downloads/
-runs/*/raw/
-runs/*/tiles/
+runs/
+*.tif
+*.tiff
 *.h5
 *.hdf5
 *.nc
