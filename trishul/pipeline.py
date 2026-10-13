@@ -36,12 +36,15 @@ from trishul.model.adapt import EventAdaptCrossTeacher
 from trishul.model.infer import GeoSarUnetInferencer
 from trishul.network.connectivity import NetworkConnectivityAnalyzer
 from trishul.network.graph import RoadGraphBuilder
+from trishul.network.montecarlo import MonteCarloConnectivityEvaluator
+from trishul.network.restore import RestoreFirstRanker
 from trishul.optical.composites import OpticalEvidenceAnalyzer
 from trishul.report.ledger import ClaimLedger
 from trishul.report.pdf import SituationReportPdfGenerator
 from trishul.sar.backends import DefaultSarBackend
 from trishul.sar.change import SarChangeDetector
 from trishul.sar.geometry import SarGeometryGate
+from trishul.terrain.flowpath import FlowPathTracer
 from trishul.terrain.hand import HandProcessor
 from trishul.terrain.stage import HydraulicStageReconstructor
 
@@ -247,6 +250,22 @@ def run_pipeline(
     connectivity_analyzer = NetworkConnectivityAnalyzer()
     net_bundle = connectivity_analyzer.analyze(graph_bundle, places_geojson, facilities_geojson)
 
+    # Probabilistic Monte-Carlo connectivity pass (Innovation #5)
+    logger.info("Executing K=200 Monte-Carlo percolation under spatially correlated hazard fields...")
+    mc_eval = MonteCarloConnectivityEvaluator(n_simulations=200, spatial_correlation_length_m=150.0)
+    settlement_nodes = {}
+    for s in net_bundle.settlements:
+        # Snap settlement coord to graph
+        nearest_node = connectivity_analyzer._find_nearest_node(s.coordinates[0], s.coordinates[1], graph_bundle.node_coords)
+        if nearest_node is not None:
+            settlement_nodes[s.settlement_id] = nearest_node
+
+    dest_nodes = [list(graph_bundle.graph.nodes)[0]] if graph_bundle.graph.nodes else []
+    mc_results = mc_eval.evaluate_probabilistic_connectivity(graph_bundle.graph, settlement_nodes, dest_nodes)
+    for s in net_bundle.settlements:
+        if s.settlement_id in mc_results:
+            s.p_cutoff = mc_results[s.settlement_id].p_cutoff
+
     network_path = out_dir / "network.json"
     with open(network_path, "w", encoding="utf-8") as f:
         json.dump({
@@ -257,6 +276,31 @@ def run_pipeline(
             "settlements": [s.__dict__ for s in net_bundle.settlements],
             "destinations": net_bundle.destinations,
         }, f, indent=2)
+
+    # Restore-First Infrastructure Repair Prioritisation
+    logger.info("Ranking restore-first repair priorities for severed segments...")
+    severed_edges = [f for f in road_eval.features + bridge_eval.features if f.get("properties", {}).get("p_hit", 0.0) >= 0.4]
+    restore_ranker = RestoreFirstRanker()
+    restore_items = restore_ranker.rank_repairs(severed_edges, net_bundle.total_settlements, bld_eval.total_buildings)
+    restore_csv_path = restore_ranker.export_csv(restore_items, out_dir / "restore_ranking.csv")
+
+    # Downstream Flood-Path Bonus Tracing (§6.9)
+    logger.info("Tracing downstream flood trajectory and corridor consistency (Bonus §6.9)...")
+    tracer = FlowPathTracer()
+    seed_lon, seed_lat = bounds[0] + 0.1 * (bounds[2] - bounds[0]), bounds[3] - 0.1 * (bounds[3] - bounds[1])
+    flow_res = tracer.trace_path(
+        seed_lon=seed_lon,
+        seed_lat=seed_lat,
+        elevation=elevation,
+        stream_mask=hand_bundle.stream_mask,
+        hand_m=hand_bundle.hand_m,
+        hazard_prob=fusion_outputs.hazard_prob,
+        transform=transform,
+        osm_places=places_geojson,
+    )
+    flow_path_out = out_dir / "flowpath.geojson"
+    with open(flow_path_out, "w", encoding="utf-8") as f:
+        json.dump(flow_res.geojson_path, f, indent=2)
 
     # 7. Auditable Claim Ledger and Situation Report Generation
     logger.info("[Stage 7/7] Registering facts in Claim Ledger and generating situation reports...")
@@ -317,6 +361,8 @@ def run_pipeline(
         "facts": str(facts_path),
         "assets": str(assets_path),
         "network": str(network_path),
+        "restore_ranking": str(restore_csv_path),
+        "flowpath": str(flow_path_out),
         "report_en": str(pdf_en),
         "report_ne": str(pdf_ne),
         "rasters": {k: str(v) for k, v in raster_paths.items()},

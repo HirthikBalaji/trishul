@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
-from rasterio.transform import rowcol
+from rasterio.transform import rowcol, xy
 from shapely.geometry import LineString, Point, mapping, shape
 
 logger = logging.getLogger(__name__)
@@ -90,11 +90,11 @@ class FlowPathTracer:
         path_elevations = []
 
         for idx in sorted_indices:
-            r, c = stream_r[idx], stream_c[idx]
+            r, c = int(stream_r[idx]), int(stream_c[idx])
             elev = float(elevation[r, c])
             if elev <= seed_elev:
                 # Transform to lon/lat
-                lon, lat = transform * (c, r)
+                lon, lat = xy(transform, r, c)
                 path_coords.append([lon, lat])
                 path_elevations.append(elev)
 
@@ -103,8 +103,8 @@ class FlowPathTracer:
                 prev_pt = [lon, lat]
 
         if len(path_coords) < 2:
-            lon0, lat0 = transform * (curr_c, curr_r)
-            lon1, lat1 = transform * (curr_c, height - 1)
+            lon0, lat0 = xy(transform, curr_r, curr_c)
+            lon1, lat1 = xy(transform, height - 1, curr_c)
             path_coords = [[lon0, lat0], [lon1, lat1]]
             path_elevations = [seed_elev, seed_elev - 800.0]
 

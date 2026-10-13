@@ -1,0 +1,58 @@
+[
+  {
+    "step_id": 1,
+    "configuration": "Otsu threshold on single SAR log-ratio",
+    "himalaya_iou": 0.42,
+    "himalaya_f1": 0.54,
+    "false_alarm_rate_pct": 18.5,
+    "marginal_f1_gain": 0.0
+  },
+  {
+    "step_id": 2,
+    "configuration": "+ Temporal-statistics pre-stack (F-test)",
+    "himalaya_iou": 0.51,
+    "himalaya_f1": 0.63,
+    "false_alarm_rate_pct": 11.2,
+    "marginal_f1_gain": 0.09
+  },
+  {
+    "step_id": 3,
+    "configuration": "+ Ray-marched SAR geometry gate (Blindspot map)",
+    "himalaya_iou": 0.58,
+    "himalaya_f1": 0.7,
+    "false_alarm_rate_pct": 4.3,
+    "marginal_f1_gain": 0.07
+  },
+  {
+    "step_id": 4,
+    "configuration": "+ Multi-track ascending/descending fusion",
+    "himalaya_iou": 0.63,
+    "himalaya_f1": 0.74,
+    "false_alarm_rate_pct": 3.1,
+    "marginal_f1_gain": 0.04
+  },
+  {
+    "step_id": 5,
+    "configuration": "+ GeoSAR-UNet (Kuro Siwo pre-trained)",
+    "himalaya_iou": 0.68,
+    "himalaya_f1": 0.78,
+    "false_alarm_rate_pct": 2.5,
+    "marginal_f1_gain": 0.04
+  },
+  {
+    "step_id": 6,
+    "configuration": "+ Hydraulic consistency layer (HAND thalweg stage)",
+    "himalaya_iou": 0.73,
+    "himalaya_f1": 0.82,
+    "false_alarm_rate_pct": 1.4,
+    "marginal_f1_gain": 0.04
+  },
+  {
+    "step_id": 7,
+    "configuration": "+ EVENT-ADAPT optical-to-SAR student (Full System)",
+    "himalaya_iou": 0.79,
+    "himalaya_f1": 0.86,
+    "false_alarm_rate_pct": 0.9,
+    "marginal_f1_gain": 0.04
+  }
+]

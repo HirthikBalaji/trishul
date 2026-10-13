@@ -1,0 +1,38 @@
+[
+  {
+    "event_name": "Bhote Koshi July 2025",
+    "valley": "Trishuli / Bhote Koshi",
+    "event_date": "2025-07-08",
+    "precision": 0.84,
+    "recall": 0.82,
+    "f1_score": 0.83,
+    "iou": 0.71
+  },
+  {
+    "event_name": "Melamchi June 2021",
+    "valley": "Helambu / Melamchi",
+    "event_date": "2021-06-15",
+    "precision": 0.81,
+    "recall": 0.79,
+    "f1_score": 0.8,
+    "iou": 0.67
+  },
+  {
+    "event_name": "Beas Flash Flood 2023",
+    "valley": "Kullu / Beas River",
+    "event_date": "2023-07-10",
+    "precision": 0.86,
+    "recall": 0.84,
+    "f1_score": 0.85,
+    "iou": 0.74
+  },
+  {
+    "event_name": "Chamoli Avalanche 2021",
+    "valley": "Rishi Ganga / Dhauliganga",
+    "event_date": "2021-02-07",
+    "precision": 0.79,
+    "recall": 0.76,
+    "f1_score": 0.77,
+    "iou": 0.63
+  }
+]

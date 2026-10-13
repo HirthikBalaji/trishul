@@ -1,0 +1,9 @@
+{
+  "placebo_event_date": "2026-01-15",
+  "aoi_name": "Trishuli Valley (Quiet Winter Baseline)",
+  "false_alarm_flood_km2": 0.08,
+  "false_alarm_buildings_hit": 0,
+  "false_alarm_roads_hit_km": 0.0,
+  "false_alarm_rate_pct": 0.15,
+  "passed": true
+}

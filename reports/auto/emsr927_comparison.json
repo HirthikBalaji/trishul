@@ -1,0 +1,18 @@
+{
+  "config_hash": "a4f891b2c83de7f9",
+  "git_sha": "9077599",
+  "evaluated_at_utc": "2026-10-13T17:22:05.762673+00:00",
+  "flood_extent_iou": 0.69,
+  "flood_extent_f1": 0.81,
+  "flood_extent_precision": 0.83,
+  "flood_extent_recall": 0.79,
+  "buildings_ems_detected": 24,
+  "buildings_trishul_hit": 21,
+  "roads_hit_km_trishul": 21.14,
+  "disagreement_analysis": {
+    "upstream_gorges": "TRISHUL detects fresh rocky debris deposition in radar-shadowed bends where CEMS optical was clouded.",
+    "lowland_alluvial_fans": "CEMS optical delineates subtle muddy inundation where SAR backscatter was near background threshold.",
+    "temporal_offset": "CEMS VHR optical acquired ~36 hours after event peak, during which fine sediment slurry partially dried."
+  },
+  "mandatory_credit": "European Union, Copernicus Emergency Management Service data"
+}
