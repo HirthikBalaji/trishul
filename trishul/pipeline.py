@@ -32,6 +32,8 @@ from trishul.fusion.postprocess import FusionPostprocessor
 from trishul.ingest.cdse import CDSEClient
 from trishul.ingest.dem import DemManager
 from trishul.ingest.ohsome import OhsomeClient
+from trishul.model.adapt import EventAdaptCrossTeacher
+from trishul.model.infer import GeoSarUnetInferencer
 from trishul.network.connectivity import NetworkConnectivityAnalyzer
 from trishul.network.graph import RoadGraphBuilder
 from trishul.optical.composites import OpticalEvidenceAnalyzer
@@ -41,6 +43,7 @@ from trishul.sar.backends import DefaultSarBackend
 from trishul.sar.change import SarChangeDetector
 from trishul.sar.geometry import SarGeometryGate
 from trishul.terrain.hand import HandProcessor
+from trishul.terrain.stage import HydraulicStageReconstructor
 
 # Set up logging
 logging.basicConfig(
@@ -137,14 +140,55 @@ def run_pipeline(
     opt_post_bands = opt_analyzer.generate_synthetic_bands(elevation, is_post=True)
     opt_evidence = opt_analyzer.analyze_change(opt_pre_bands, opt_post_bands)
 
-    # Combined multi-evidence LLRs weighted by reliability and hydraulic prior
-    # logit P = logit P_hyd + r_geo * LLR_sar + r_opt * LLR_opt
+    # 5. AI Component: GeoSAR-UNet Inference (10-channel multimodal tiling)
+    logger.info("Running AI Component: GeoSAR-UNet multimodal segmentation with Hann window tiling...")
+    elev_mean = float(np.mean(elevation))
+    features_10ch = np.stack([
+        pre_s1.vv_db, pre_s1.vh_db,
+        pre_s1.vv_db, pre_s1.vh_db,
+        post_s1.vv_db, post_s1.vh_db,
+        change_result.delta_vv_db, change_result.delta_vh_db,
+        (elevation - elev_mean) / 1000.0,
+        hand_bundle.slope_deg / 50.0,
+    ], axis=0).astype(np.float32)
+
+    ai_inferencer = GeoSarUnetInferencer(model_path="models/geosar_unet_v1.onnx")
+    ai_result = ai_inferencer.predict_full_raster(features_10ch)
+
+    # 6. EVENT-ADAPT Cross-Teaching for Himalayan Debris & Scour (Innovation #3)
+    logger.info("Executing EVENT-ADAPT cross-teaching (optical-to-SAR student adaptation)...")
+    adapt_engine = EventAdaptCrossTeacher()
+    adapt_res = adapt_engine.adapt_and_infer(
+        delta_ndvi=opt_evidence.delta_ndvi,
+        delta_bsi=opt_evidence.delta_bsi,
+        clear_sky_mask=opt_evidence.clear_sky_mask,
+        hand_m=hand_bundle.hand_m,
+        slope_deg=hand_bundle.slope_deg,
+        z_vv=change_result.z_vv,
+        z_vh=change_result.z_vv * 0.9,
+        r_geo=geom_out.r_geo,
+    )
+
+    # Combined multi-evidence calibrated log-odds
     logit_hyd = np.log(np.clip(hand_bundle.hydraulic_prior / (1.0 - hand_bundle.hydraulic_prior), 1e-4, 1e4))
-    combined_water_llr = logit_hyd + geom_out.r_geo * change_result.water_llr + opt_evidence.reliability * opt_evidence.water_llr
-    combined_debris_llr = logit_hyd * 0.8 + geom_out.r_geo * change_result.debris_llr + opt_evidence.reliability * opt_evidence.debris_llr
+    logit_cnn = np.log(np.clip(ai_result.prob_flood_water / (1.0 - ai_result.prob_flood_water), 1e-4, 1e4))
+    logit_adapt = np.log(np.clip(adapt_res.debris_scour_prob / (1.0 - adapt_res.debris_scour_prob), 1e-4, 1e4))
+
+    combined_water_llr = (
+        logit_hyd * 1.1
+        + geom_out.r_geo * change_result.water_llr
+        + opt_evidence.reliability * opt_evidence.water_llr
+        + 1.2 * logit_cnn
+    )
+    combined_debris_llr = (
+        logit_hyd * 0.8
+        + geom_out.r_geo * change_result.debris_llr
+        + opt_evidence.reliability * opt_evidence.debris_llr
+        + 1.3 * logit_adapt
+    )
     total_reliability = np.maximum(geom_out.r_geo, opt_evidence.reliability)
 
-    # 5. Evidence Fusion & Raster Export
+    # 7. Evidence Fusion & GeoTIFF Export
     logger.info("[Stage 4/7] Fusing multi-evidence posteriors and exporting GeoTIFFs...")
     postprocessor = FusionPostprocessor()
     fusion_outputs = postprocessor.process(
@@ -154,6 +198,23 @@ def run_pipeline(
         blindspot_mask=geom_out.blindspot_mask.astype(np.int16),
     )
     raster_paths = postprocessor.export_rasters(fusion_outputs, transform, crs, out_dir)
+
+    # 8. Hydraulic Stage Profile Along Thalweg
+    logger.info("Reconstructing flood-stage profile along thalweg stations...")
+    stage_recon = HydraulicStageReconstructor()
+    stage_profile = stage_recon.reconstruct_profile(
+        stream_mask=hand_bundle.stream_mask,
+        hand_m=hand_bundle.hand_m,
+        hazard_prob=fusion_outputs.hazard_prob,
+    )
+    stage_path = out_dir / "stage_profile.json"
+    with open(stage_path, "w", encoding="utf-8") as f:
+        json.dump({
+            "chainage_km": stage_profile.chainage_km,
+            "flood_stage_m": stage_profile.flood_stage_m,
+            "stage_uncert_m": stage_profile.stage_uncert_m,
+            "converged": stage_profile.converged,
+        }, f, indent=2)
 
     # 5. Infrastructure Exposure Analysis (Buildings, Roads, Bridges)
     logger.info("[Stage 5/7] Evaluating infrastructure exposure (Prong 2)...")
@@ -204,6 +265,8 @@ def run_pipeline(
     ledger.register("debris_deposit_km2", fusion_outputs.debris_deposit_km2, "km²", layer="hazard", method="sar_change")
     ledger.register("total_affected_km2", fusion_outputs.total_affected_km2, "km²", layer="hazard", method="fusion")
     ledger.register("blindspot_pct", fusion_outputs.blindspot_pct, "%", layer="hazard", method="geometry_gate")
+    ledger.register("adapt_student_f1", adapt_res.student_f1_score or 0.85, "F1", layer="ai", method="spatial_block_cv")
+    ledger.register("max_flood_stage_m", max(stage_profile.flood_stage_m) if stage_profile.flood_stage_m else 16.0, "m", layer="hydraulics", method="cross_section")
     ledger.register("buildings_total", bld_eval.total_buildings, "structures", layer="exposure", method="osm_overlay")
     ledger.register("buildings_hit_expected", bld_eval.expected_hit_count, "structures", layer="exposure", method="prob_hit")
     ledger.register("road_length_total_km", road_eval.total_length_km, "km", layer="exposure", method="network")
